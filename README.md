@@ -2,13 +2,15 @@
 
 Simple Inference Test for ONNX Runtime Web
 
+https://github.com/PINTO0309/simple-onnx-processing-tools
+
 ## Overview
 
 sit4onnxw is a comprehensive Python tool for benchmarking ONNX models using ONNX Runtime Web with support for CPU, WebGL, and WebGPU execution providers. This tool is inspired by [sit4onnx](https://github.com/PINTO0309/sit4onnx) but specifically designed to work with onnxruntime-web through browser automation.
 
 **Key Differentiators:**
 - **100% sit4onnx Compatible**: Same CLI interface and parameter specifications
-- **Multi-Input Model Support**: Full support for complex models with multiple inputs/outputs  
+- **Multi-Input Model Support**: Full support for complex models with multiple inputs/outputs
 - **Dynamic Tensor Intelligence**: Automatic shape inference for dynamic dimensions
 - **Robust Error Handling**: Categorized errors with actionable solutions
 - **Browser Automation**: Leverages Selenium for reliable ONNX Runtime Web execution
@@ -203,7 +205,7 @@ sit4onnxw automatically infers appropriate shapes for dynamic tensors:
 sit4onnxw provides intelligent error categorization:
 
 - **Model Format**: Incompatible model format for execution provider
-- **Input Tensor**: Shape/dimension mismatches with detailed error info  
+- **Input Tensor**: Shape/dimension mismatches with detailed error info
 - **WebGL/WebGPU**: Provider-specific errors with fallback suggestions
 - **WebAssembly**: WASM loading failures with troubleshooting hints
 
@@ -223,9 +225,193 @@ sit4onnxw --input_onnx_file_path model.onnx --debug
 ```
 Keeps browser open for manual inspection when errors occur.
 
+## Output Examples
+
+### 1. Single Input Model (CPU)
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_optimized_dynamic.onnx \
+--execution_provider cpu \
+--test_loop_count 5
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_optimized_dynamic.onnx
+Execution Provider: cpu
+Batch Size: 1
+Test Loop Count: 5
+--------------------------------------------------
+Model has 1 input(s):
+  Input 0: input - shape: [batch_size, seq, features], type: 1
+Input 'input': shape = [1, 90, 105], dtype = <class 'numpy.float32'>
+Generated data shape: (1, 90, 105), size: 9450
+Converting 'input': original shape=(1, 90, 105), size=9450
+  Converted to list: length=1, type=<class 'list'>
+Execution Provider: cpu
+Test Loop Count: 5
+Average Inference Time: 4.840 ms
+Min Inference Time: 4.400 ms
+Max Inference Time: 5.200 ms
+--------------------------------------------------
+Inference completed successfully!
+Number of outputs: 1
+Output 0: shape=(1, 2), dtype=float64
+```
+
+### 2. Multi-Input Model with Fixed Shapes
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_multi_input_fix.onnx \
+--fixed_shapes '1 64 112 200' \
+--fixed_shapes '1 3 112 200' \
+--test_loop_count 3
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_multi_input_fix.onnx
+Execution Provider: cpu
+Batch Size: 1
+Test Loop Count: 3
+Fixed Shapes: [[1, 64, 112, 200], [1, 3, 112, 200]]
+--------------------------------------------------
+Model has 2 input(s):
+  Input 0: feat - shape: [1, 64, 112, 200], type: 1
+  Input 1: pc_dep - shape: [1, 3, 112, 200], type: 1
+Applied fixed shape for input 0: [1, 64, 112, 200]
+Input 'feat': shape = [1, 64, 112, 200], dtype = <class 'numpy.float32'>
+Generated data shape: (1, 64, 112, 200), size: 1433600
+Applied fixed shape for input 1: [1, 3, 112, 200]
+Input 'pc_dep': shape = [1, 3, 112, 200], dtype = <class 'numpy.float32'>
+Generated data shape: (1, 3, 112, 200), size: 67200
+Execution Provider: cpu
+Test Loop Count: 3
+Average Inference Time: 1578.500 ms
+Min Inference Time: 1568.000 ms
+Max Inference Time: 1589.000 ms
+--------------------------------------------------
+Inference completed successfully!
+Number of outputs: 4
+Output 0: shape=(1, 3, 112, 200), dtype=float64
+Output 1: shape=(1, 8, 112, 200), dtype=float64
+Output 2: shape=(1, 1, 112, 200), dtype=float64
+Output 3: shape=(1, 8, 112, 200), dtype=float64
+```
+
+### 3. WebGL with CPU Fallback
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_optimized_dynamic.onnx \
+--execution_provider webgl \
+--fallback_to_cpu \
+--test_loop_count 3
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_optimized_dynamic.onnx
+Execution Provider: webgl
+Batch Size: 1
+Test Loop Count: 3
+--------------------------------------------------
+Warning: webgl execution provider failed: Browser error: Error (Model Format): Model format incompatible with selected execution provider. Try CPU provider.
+Falling back to cpu execution provider...
+Model has 1 input(s):
+  Input 0: input - shape: [batch_size, seq, features], type: 1
+Input 'input': shape = [1, 90, 105], dtype = <class 'numpy.float32'>
+Generated data shape: (1, 90, 105), size: 9450
+Execution Provider: cpu
+Test Loop Count: 3
+Average Inference Time: 4.767 ms
+Min Inference Time: 4.400 ms
+Max Inference Time: 5.100 ms
+--------------------------------------------------
+Inference completed successfully!
+Number of outputs: 1
+Output 0: shape=(1, 2), dtype=float64
+```
+
+### 4. Error Case - Shape Mismatch
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_multi_input_fix.onnx \
+--fixed_shapes '1 32 112 200' \
+--test_loop_count 1
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_multi_input_fix.onnx
+Execution Provider: cpu
+Batch Size: 1
+Test Loop Count: 1
+Fixed Shapes: [[1, 32, 112, 200]]
+--------------------------------------------------
+Model has 2 input(s):
+  Input 0: feat - shape: [1, 64, 112, 200], type: 1
+  Input 1: pc_dep - shape: [1, 3, 112, 200], type: 1
+Applied fixed shape for input 0: [1, 32, 112, 200]
+Warning: Single fixed shape provided but this is input 1. Using defaults.
+Error: Browser error: Error (Unknown): failed to call OrtRun(). ERROR_CODE: 2, ERROR_MESSAGE: Got invalid dimensions for input: feat for the following indices index: 1 Got: 32 Expected: 64 Please fix either the inputs/outputs or the model.
+```
+
+### 5. Dynamic Tensor with Batch Size
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_optimized_dynamic.onnx \
+--batch_size 4 \
+--test_loop_count 2
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_optimized_dynamic.onnx
+Execution Provider: cpu
+Batch Size: 4
+Test Loop Count: 2
+--------------------------------------------------
+Model has 1 input(s):
+  Input 0: input - shape: [batch_size, seq, features], type: 1
+Input 'input': shape = [4, 90, 105], dtype = <class 'numpy.float32'>
+Generated data shape: (4, 90, 105), size: 37800
+Execution Provider: cpu
+Test Loop Count: 2
+Average Inference Time: 16.967 ms
+Min Inference Time: 16.900 ms
+Max Inference Time: 17.000 ms
+--------------------------------------------------
+Inference completed successfully!
+Number of outputs: 1
+Output 0: shape=(4, 2), dtype=float64
+```
+
+### 6. Using External Numpy Files
+```bash
+$ sit4onnxw \
+--input_onnx_file_path model_multi_input_fix.onnx \
+--input_numpy_file_paths test_feat.npy \
+--input_numpy_file_paths test_pc_dep.npy \
+--test_loop_count 1
+
+sit4onnxw - Simple Inference Test for ONNX Runtime Web
+Model: model_multi_input_fix.onnx
+Execution Provider: cpu
+Batch Size: 1
+Test Loop Count: 1
+--------------------------------------------------
+Model has 2 input(s):
+  Input 0: feat - shape: [1, 64, 112, 200], type: 1
+  Input 1: pc_dep - shape: [1, 3, 112, 200], type: 1
+Converting 'feat': original shape=(1, 64, 112, 200), size=1433600
+Converting 'pc_dep': original shape=(1, 3, 112, 200), size=67200
+Execution Provider: cpu
+Test Loop Count: 1
+Average Inference Time: 1561.200 ms
+Min Inference Time: 1561.200 ms
+Max Inference Time: 1561.200 ms
+--------------------------------------------------
+Inference completed successfully!
+Number of outputs: 4
+Output 0: shape=(1, 3, 112, 200), dtype=float64
+Output 1: shape=(1, 8, 112, 200), dtype=float64
+Output 2: shape=(1, 1, 112, 200), dtype=float64
+Output 3: shape=(1, 8, 112, 200), dtype=float64
+```
+
 ## Requirements
 
-- Python 3.8+
+- Python 3.10+
 - Chrome or Chromium browser
 - WebDriver compatible browser setup
 - Chrome WebDriver (automatically managed via webdriver-manager)
