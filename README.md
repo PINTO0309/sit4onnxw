@@ -4,7 +4,7 @@ Simple Inference Test for ONNX Runtime Web
 
 https://github.com/PINTO0309/simple-onnx-processing-tools
 
-[![Downloads](https://static.pepy.tech/personalized-badge/sit4onnxw?period=total&units=none&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/sit4onnxw) ![GitHub](https://img.shields.io/github/license/PINTO0309/sit4onnxw?color=2BAF2B) [![PyPI](https://img.shields.io/pypi/v/sit4onnxw?color=2BAF2B)](https://pypi.org/project/sit4onnxw/)
+[![Downloads](https://static.pepy.tech/personalized-badge/sit4onnxw?period=total&units=none&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/sit4onnxw) ![GitHub](https://img.shields.io/github/license/PINTO0309/sit4onnxw?color=2BAF2B) [![PyPI](https://img.shields.io/pypi/v/sit4onnxw?color=2BAF2B)](https://pypi.org/project/sit4onnxw/) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/PINTO0309/sit4onnxw)
 
 ## Overview
 
