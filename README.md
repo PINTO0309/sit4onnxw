@@ -4,6 +4,8 @@ Simple Inference Test for ONNX Runtime Web
 
 https://github.com/PINTO0309/simple-onnx-processing-tools
 
+[![Downloads](https://static.pepy.tech/personalized-badge/sit4onnxw?period=total&units=none&left_color=grey&right_color=brightgreen&left_text=Downloads)](https://pepy.tech/project/sit4onnxw) ![GitHub](https://img.shields.io/github/license/PINTO0309/sit4onnxw?color=2BAF2B) [![PyPI](https://img.shields.io/pypi/v/sit4onnxw?color=2BAF2B)](https://pypi.org/project/sit4onnxw/)
+
 ## Overview
 
 sit4onnxw is a comprehensive Python tool for benchmarking ONNX models using ONNX Runtime Web with support for CPU, WebGL, and WebGPU execution providers. This tool is inspired by [sit4onnx](https://github.com/PINTO0309/sit4onnx) but specifically designed to work with onnxruntime-web through browser automation.
