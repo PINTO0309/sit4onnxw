@@ -115,7 +115,7 @@ class TestWebInference(unittest.TestCase):
         self.assertIn('onnxruntime-web', html_content)
         self.assertIn('webgl', html_content)
         self.assertIn('runInference', html_content)
-        self.assertIn('base64', html_content)
+        self.assertIn('atob', html_content)  # Check for base64 decoding function
 
     def test_invalid_execution_provider(self):
         """Test error handling for invalid execution provider."""

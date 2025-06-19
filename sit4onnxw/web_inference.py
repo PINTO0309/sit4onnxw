@@ -164,7 +164,22 @@ def inference(
         # Process outputs
         outputs = []
         for output_data in results['outputs']:
-            output_array = np.array(output_data['data']).reshape(output_data['shape'])
+            # Map JavaScript tensor types to numpy dtypes
+            dtype_map = {
+                'float32': np.float32,
+                'float64': np.float64,
+                'int32': np.int32,
+                'int64': np.int64,
+                'uint8': np.uint8,
+                'uint16': np.uint16,
+                'bool': np.bool_
+            }
+            
+            # Get the appropriate dtype from the output data
+            output_dtype = dtype_map.get(output_data.get('dtype', 'float32'), np.float32)
+            
+            # Create array with the correct dtype
+            output_array = np.array(output_data['data'], dtype=output_dtype).reshape(output_data['shape'])
             outputs.append(output_array)
 
         # Print benchmark results
@@ -340,12 +355,13 @@ def _create_test_html(
 
     # Read model file as base64
     import base64
-    with open(model_path, 'rb') as f:
+    
+    # Determine which model path to use and what format it is
+    actual_model_path = ort_model_path if ort_model_path else model_path
+    is_ort_format = actual_model_path.endswith('.ort') if ort_model_path else False
+    
+    with open(actual_model_path, 'rb') as f:
         model_data = base64.b64encode(f.read()).decode('utf-8')
-
-    if ort_model_path:
-        with open(ort_model_path, 'rb') as f:
-            model_data = base64.b64encode(f.read()).decode('utf-8')
 
     html_template = f"""
 <!DOCTYPE html>
@@ -379,8 +395,15 @@ def _create_test_html(
                 
                 // Set execution provider
                 const providers = [];
+                let useWebGLFallback = false;
+                
                 if ('{execution_provider}' === 'webgl') {{
-                    providers.push('webgl');
+                    providers.push({{
+                        name: 'webgl',
+                        // Additional WebGL options that might help with compatibility
+                        preferredLayout: 'NHWC'
+                    }});
+                    useWebGLFallback = true;
                 }} else if ('{execution_provider}' === 'webgpu') {{
                     providers.push('webgpu');
                 }}
@@ -393,9 +416,49 @@ def _create_test_html(
                     modelBuffer[i] = modelData.charCodeAt(i);
                 }}
 
-                const session = await ort.InferenceSession.create(modelBuffer, {{
-                    executionProviders: providers
-                }});
+                // Check if this is an ORT format model
+                const isOrtFormat = {str(is_ort_format).lower()};
+                
+                let session;
+                let actualProvider = '{execution_provider}';
+                
+                try {{
+                    // Try to create session with requested providers
+                    if (isOrtFormat) {{
+                        // For ORT format, use the buffer directly with ORT format loading
+                        session = await ort.InferenceSession.create(modelBuffer, {{
+                            executionProviders: providers,
+                            // Explicitly specify this is ORT format
+                            graphOptimizationLevel: 'all'
+                        }});
+                    }} else {{
+                        // For regular ONNX format
+                        session = await ort.InferenceSession.create(modelBuffer, {{
+                            executionProviders: providers
+                        }});
+                    }}
+                }} catch (providerError) {{
+                    console.warn('Failed to create session with requested provider, trying CPU only:', providerError);
+                    
+                    // If WebGL/WebGPU fails, try CPU only
+                    if (useWebGLFallback || '{execution_provider}' === 'webgpu') {{
+                        try {{
+                            session = await ort.InferenceSession.create(modelBuffer, {{
+                                executionProviders: ['cpu']
+                            }});
+                            actualProvider = 'cpu (fallback)';
+                            console.log('Successfully fell back to CPU provider');
+                        }} catch (cpuError) {{
+                            throw new Error(`Failed to load model with any provider. Original error: ${{providerError.message}}, CPU error: ${{cpuError.message}}`);
+                        }}
+                    }} else {{
+                        throw providerError;
+                    }}
+                }}
+                
+                console.log(`Session created successfully with provider: ${{actualProvider}}`);
+                console.log('Input names:', session.inputNames);
+                console.log('Output names:', session.outputNames);
 
                 // Prepare input data
                 const inputData = {json.dumps(input_data_json)};
@@ -482,7 +545,7 @@ def _create_test_html(
                         min_time: minTime,
                         max_time: maxTime,
                         test_count: testLoopCount,
-                        execution_provider: '{execution_provider}'
+                        execution_provider: actualProvider
                     }}
                 }};
 
