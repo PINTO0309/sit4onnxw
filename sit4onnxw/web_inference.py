@@ -164,7 +164,22 @@ def inference(
         # Process outputs
         outputs = []
         for output_data in results['outputs']:
-            output_array = np.array(output_data['data']).reshape(output_data['shape'])
+            # Map JavaScript tensor types to numpy dtypes
+            dtype_map = {
+                'float32': np.float32,
+                'float64': np.float64,
+                'int32': np.int32,
+                'int64': np.int64,
+                'uint8': np.uint8,
+                'uint16': np.uint16,
+                'bool': np.bool_
+            }
+            
+            # Get the appropriate dtype from the output data
+            output_dtype = dtype_map.get(output_data.get('dtype', 'float32'), np.float32)
+            
+            # Create array with the correct dtype
+            output_array = np.array(output_data['data'], dtype=output_dtype).reshape(output_data['shape'])
             outputs.append(output_array)
 
         # Print benchmark results
