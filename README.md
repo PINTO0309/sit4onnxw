@@ -164,13 +164,6 @@ results = inference(
     execution_provider="cpu",
     test_loop_count=10
 )
-
-# Legacy format support (backward compatibility)
-results = inference(
-    input_onnx_file_path="multi_input_model.onnx",
-    fixed_shapes="1,64,112,200;1,3,112,200",  # semicolon-separated
-    execution_provider="cpu"
-)
 ```
 
 ## Model Support
@@ -263,8 +256,8 @@ Output 0: shape=(1, 2), dtype=float64
 ```bash
 $ sit4onnxw \
 --input_onnx_file_path model_multi_input_fix.onnx \
---fixed_shapes '1 64 112 200' \
---fixed_shapes '1 3 112 200' \
+--fixed_shapes 1 64 112 200 \
+--fixed_shapes 1 3 112 200 \
 --test_loop_count 3
 
 sit4onnxw - Simple Inference Test for ONNX Runtime Web
@@ -332,7 +325,7 @@ Output 0: shape=(1, 2), dtype=float64
 ```bash
 $ sit4onnxw \
 --input_onnx_file_path model_multi_input_fix.onnx \
---fixed_shapes '1 32 112 200' \
+--fixed_shapes 1 32 112 200 \
 --test_loop_count 1
 
 sit4onnxw - Simple Inference Test for ONNX Runtime Web
