@@ -7,6 +7,52 @@ from typing import Optional
 from .web_inference import inference
 
 
+class FixedShapesOption(click.Option):
+    """
+    Custom click option that collects all subsequent non-option tokens
+    (including negative integers) for --fixed_shapes, allowing users to
+    specify shapes without quoting them.
+    """
+
+    def add_to_parser(self, parser, ctx):
+        super().add_to_parser(parser, ctx)
+
+        def _wrap_option(option_parser):
+            original_process = option_parser.process
+
+            def process(value, state):
+                collected = []
+                if value is not None:
+                    collected.append(value)
+                while state.rargs:
+                    next_arg = state.rargs[0]
+                    if next_arg == '--':
+                        break
+                    if next_arg.startswith('-') and not self._looks_like_int(next_arg):
+                        break
+                    collected.append(state.rargs.pop(0))
+                joined = ' '.join(collected)
+                return original_process(joined, state)
+
+            option_parser.process = process
+
+        for opt in self.opts:
+            option = parser._long_opt.get(opt)
+            if option:
+                _wrap_option(option)
+        for opt in self.secondary_opts:
+            option = parser._short_opt.get(opt)
+            if option:
+                _wrap_option(option)
+
+    @staticmethod
+    def _looks_like_int(token: str) -> bool:
+        if token in {'', '-', '+'}:
+            return False
+        stripped = token.lstrip('+-')
+        return stripped.isdigit()
+
+
 @click.command()
 @click.option(
     '--input_onnx_file_path',
@@ -27,6 +73,7 @@ from .web_inference import inference
     '-fs',
     type=str,
     multiple=True,
+    cls=FixedShapesOption,
     help='Input OPs with undefined shapes changed to specified shape. Can be specified multiple times for different input OPs.'
 )
 @click.option(
